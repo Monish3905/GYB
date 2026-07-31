@@ -1,0 +1,6 @@
+{
+  "name": "@payment-os/investigation-assistant",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "UNLICENSED"
+}
