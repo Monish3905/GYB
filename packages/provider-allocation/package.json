@@ -1,0 +1,6 @@
+{
+  "name": "@payment-os/provider-allocation",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "UNLICENSED"
+}
