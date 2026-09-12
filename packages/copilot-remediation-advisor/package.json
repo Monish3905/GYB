@@ -1,0 +1,6 @@
+{
+  "name": "@payment-os/copilot-remediation-advisor",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "UNLICENSED"
+}

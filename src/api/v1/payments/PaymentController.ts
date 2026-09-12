@@ -2,33 +2,46 @@ import { PaymentOrchestrator, PaymentRequest } from '../../../domains/transactio
 import { Decimal } from '../../../shared/types';
 import { globalEventBus } from '../../../infrastructure/eventbus/EventBus';
 
-// Stubbed dependencies for DI setup
+// Real dependencies
 import { WalletService } from '../../../domains/wallet/services/WalletService';
 import { LedgerService } from '../../../domains/ledger/services/LedgerService';
 import { RoutingEngine } from '../../../domains/routing/services/RoutingEngine';
 import { TreasuryService } from '../../../domains/treasury/services/TreasuryService';
-import { MockSettlementProvider } from '../../../domains/settlement/providers/MockSettlementProvider';
-import { InternalRailProvider } from '../../../domains/settlement/providers/InternalRailProvider';
+import { PostgresWalletRepository } from '../../../infrastructure/repositories/postgres/PostgresWalletRepository';
+import { PostgresLedgerRepository } from '../../../infrastructure/repositories/postgres/PostgresLedgerRepository';
+import { PostgresTransactionRepository } from '../../../infrastructure/repositories/postgres/PostgresTransactionRepository';
+import { BlockchainSettlementAdapter } from '../../../domains/settlement/providers/BlockchainSettlementAdapter';
+import { SolanaProvider } from '../../../../packages/blockchain-sdk/src/providers/solana/SolanaProvider';
 import { ISettlementProvider } from '../../../domains/settlement/providers/ISettlementProvider';
 
 export class PaymentController {
   private orchestrator: PaymentOrchestrator;
 
   constructor() {
-    // In a real app, these are injected via a DI container (e.g. InversifyJS or TypeDI)
-    // We instantiate stubs/mocks here to wire up the API for the internal rail milestone.
-    const walletService = new WalletService({} as any);
-    const ledgerService = new LedgerService({} as any, {} as any);
+    // Instantiate real repositories
+    const walletRepo = new PostgresWalletRepository();
+    const ledgerRepo = new PostgresLedgerRepository();
+    const txnRepo = new PostgresTransactionRepository();
+    
+    // Instantiate real services
+    const walletService = new WalletService(walletRepo);
+    const ledgerService = new LedgerService(ledgerRepo, txnRepo);
+    // Note: Treasury is stubbed repository-wise for this milestone, but it exists
     const treasuryService = new TreasuryService({} as any);
     
-    const mockProvider = new MockSettlementProvider();
-    const internalProvider = new InternalRailProvider(treasuryService);
+    // Set up Solana Provider for blockchain settlement
+    // Using Devnet for current milestone
+    const solanaProvider = new SolanaProvider('https://api.devnet.solana.com');
+    // Ensure initialized asynchronously or handle appropriately in real system
+    solanaProvider.initialize().catch(err => console.error("Solana init failed", err));
+    
+    const blockchainAdapter = new BlockchainSettlementAdapter(solanaProvider, 'solana');
     
     const providers = new Map<string, ISettlementProvider>();
-    providers.set('MockSettlementProvider', mockProvider);
-    providers.set('InternalRailProvider', internalProvider);
+    providers.set('solana', blockchainAdapter);
 
-    const routingEngine = new RoutingEngine([mockProvider, internalProvider], treasuryService);
+    // Setup Routing Engine exclusively with the blockchain adapter
+    const routingEngine = new RoutingEngine([blockchainAdapter], treasuryService);
 
     this.orchestrator = new PaymentOrchestrator(
       walletService,

@@ -1,0 +1,6 @@
+{
+  "name": "@payment-os/cross-provider-balancer",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "UNLICENSED"
+}

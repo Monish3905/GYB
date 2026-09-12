@@ -30,21 +30,46 @@ export class BlockchainSettlementAdapter implements ISettlementProvider {
   
   async send(settlement: SettlementJob): Promise<SettlementResult> {
     try {
+      // In a real system, we'd fetch the actual destination from the database based on the recipient wallet.
+      // For testing, we allow passing it via metadata if available, otherwise fallback to a mock address
+      // just so the transaction builds (though it might fail if unfunded).
+      const destinationAddress = (settlement as any).metadata?.destinationAddress || '11111111111111111111111111111111'; // System program ID as fallback safe address
+      
+      const treasuryPubkey = process.env.TREASURY_SOLANA_PUBKEY;
+      const treasurySecret = process.env.TREASURY_SOLANA_SECRET;
+      
+      if (!treasuryPubkey || !treasurySecret) {
+         throw new Error("Missing TREASURY_SOLANA_PUBKEY or TREASURY_SOLANA_SECRET in environment");
+      }
+
       // 1. Build Transaction
       const tx = await this.chainProvider.buildTransaction({
-        // Stub: Normally we look up the vault address for 'from' and destination for 'to'
-        from: 'treasury_vault',
-        to: 'destination_address',
-        amount: settlement.amount.toNumber()
+        from: treasuryPubkey,
+        to: destinationAddress,
+        amount: settlement.amount.toNumber(),
+        asset: settlement.currency
       });
 
-      // 2. Sign (Stub: using a mock signer)
-      const mockSigner = { 
-        sign: async () => 'mock_sig', 
-        getPublicKey: async () => 'mock_pub',
-        signMessage: async () => 'mock_msg'
+      // 2. Sign using real treasury keypair
+      const treasurySigner = { 
+        sign: async (msg: Uint8Array) => {
+           const { Keypair } = require('@solana/web3.js');
+           const nacl = require('tweetnacl');
+           const kp = Keypair.fromSecretKey(Buffer.from(treasurySecret!, 'hex'));
+           const signature = nacl.sign.detached(msg, kp.secretKey);
+           return Buffer.from(signature).toString('hex');
+        }, 
+        getPublicKey: async () => treasuryPubkey,
+        signMessage: async (msg: Uint8Array) => {
+           const { Keypair } = require('@solana/web3.js');
+           const nacl = require('tweetnacl');
+           const kp = Keypair.fromSecretKey(Buffer.from(treasurySecret!, 'hex'));
+           const signature = nacl.sign.detached(msg, kp.secretKey);
+           return Buffer.from(signature).toString('hex');
+        }
       };
-      const signedTx = await this.chainProvider.signTransaction(tx, mockSigner);
+      
+      const signedTx = await this.chainProvider.signTransaction(tx, treasurySigner);
 
       // 3. Broadcast
       const txHash = await this.chainProvider.broadcastTransaction(signedTx);
@@ -87,8 +112,9 @@ export class BlockchainSettlementAdapter implements ISettlementProvider {
   }
   
   async getBalance(currency: string): Promise<Decimal> {
-    // Stub address
-    const balStr = await this.chainProvider.getBalance('treasury_vault', currency);
+    const treasuryPubkey = process.env.TREASURY_SOLANA_PUBKEY;
+    if (!treasuryPubkey) throw new Error('Missing TREASURY_SOLANA_PUBKEY in environment');
+    const balStr = await this.chainProvider.getBalance(treasuryPubkey, currency);
     return new Decimal(balStr);
   }
   

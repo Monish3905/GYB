@@ -1,0 +1,6 @@
+{
+  "name": "@payment-os/reconciliation-jobs",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "UNLICENSED"
+}

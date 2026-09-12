@@ -1,5 +1,5 @@
 import { Decimal } from '../../../shared/types';
-import { SettlementJob } from './SettlementModels';
+import { SettlementJob } from '../models/SettlementModels';
 
 export interface SettlementResult {
   status: 'success' | 'pending' | 'failed';

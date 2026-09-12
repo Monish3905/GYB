@@ -1,0 +1,6 @@
+{
+  "name": "@payment-os/identity-provider-auth0",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "UNLICENSED"
+}

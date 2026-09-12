@@ -2,14 +2,18 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "commonjs",
-    "rootDir": "./src",
+    "rootDir": ".",
     "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@blockchain-sdk/*": ["packages/blockchain-sdk/src/*"]
+    }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.test.ts"]
+  "include": ["src/**/*", "packages/**/*", "scripts/**/*"],
+  "exclude": ["node_modules", "**/*.test.ts", "dist"]
 }

@@ -60,7 +60,7 @@ export class InternalRailProvider implements ISettlementProvider {
     return {
       estimatedFeeNative: new Decimal(0),
       estimatedFeeUSD: new Decimal(0),
-      confidence: 'very_high',
+      confidence: 'high',
       validUntil: new Date(Date.now() + 86400000)
     };
   }
